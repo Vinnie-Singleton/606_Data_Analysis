@@ -35,36 +35,45 @@ df = spark.read.csv("sunrise_sunset_times.csv",header=True)
 ### To parse the times
 ```
 # Format = 07:19:59
-val file = df("Sunrise")
-val hour = file.map(line => line.split(":")[0])
-val min = file.map(line => line.split(":")[1])
-val sec = file.map(line => line.split(":")[2])
+file = df("Sunrise")
+srhour = file.map(line => line.split(":")[0])
+srmin = file.map(line => line.split(":")[1])
+srsec = file.map(line => line.split(":")[2])
+```
+
+```
+file = df("Sunset")
+sshour = file.map(line => line.split(":")[0])
+ssmin = file.map(line => line.split(":")[1])
+sssec = file.map(line => line.split(":")[2])
 ```
 
 ### Getting the minimum and maximum sunrise and sunset times
 ```
-val time = hour+min+sec
-val min_sunrise = df.groupBy("Sunrise", “time”).min(“time”)
-val max_sunrise = df.groupBy("Sunrise", “time”).max(“time”)
+srtime = srhour+srmin+srsec
+sstime = sshour+ssmin+sssec
 
-val min_sunset = df.groupBy("Sunset", “time”).min(“time”)
-val max_sunset = df.groupBy("Sunset", “time”).max(“time”)
+min_sunrise = df.groupBy("Sunrise", “srtime”).min(“srtime”)
+max_sunrise = df.groupBy("Sunrise", “srtime”).max(“srtime”)
+
+min_sunset = df.groupBy("Sunset", “sstime”).min(“sstime”)
+max_sunset = df.groupBy("Sunset", “sstime”).max(“sstime”)
 ```
 
 
 ### Get the amount of daylight/darkness in both ranges for every day
 ```
-val morning_darkness = sunrise – min_sunrise
-val morning_light = max_sunrise – sunrise
+morning_darkness = sunrise – min_sunrise
+morning_light = max_sunrise – sunrise
 
-val evening_darkness = max_sunset – sunset
-val evening_light = sunset – min_sunset
+evening_darkness = max_sunset – sunset
+evening_light = sunset – min_sunset
 ```
 
 ### Get number of rides in each range
 ```
-val num_rides_in_morning = count(when(col("tpep_pickup_datetime”) <= max_sunrise AND col("tpep_pickup_datetime”) >= min_sunrise, True))
-val num_rides_in_evening = count(when(col("tpep_pickup_datetime”) <= max_sunset AND col("tpep_pickup_datetime”) >= min_sunset, True))
+num_rides_in_morning = count(when(col("tpep_pickup_datetime”) <= max_sunrise AND col("tpep_pickup_datetime”) >= min_sunrise, True))
+num_rides_in_evening = count(when(col("tpep_pickup_datetime”) <= max_sunset AND col("tpep_pickup_datetime”) >= min_sunset, True))
 ```
 
 ### Computing correlation 
