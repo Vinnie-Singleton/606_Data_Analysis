@@ -32,16 +32,16 @@ df = spark.read.csv("sunrise_sunset_times.csv",header=True)
 ```
 
 
-### To parse the times:
+### To parse the times
 ```
 # Format = 07:19:59
-val file = sc.textFile("Sunrises")
+val file = df("Sunrise")
 val hour = file.map(line => line.split(":")[0])
 val min = file.map(line => line.split(":")[1])
 val sec = file.map(line => line.split(":")[2])
 ```
 
-### Getting the minimum and maximum sunrise and sunset times:
+### Getting the minimum and maximum sunrise and sunset times
 ```
 val time = hour+min+sec
 val min_sunrise = df.groupBy("Sunrise", “time”).min(“time”)
