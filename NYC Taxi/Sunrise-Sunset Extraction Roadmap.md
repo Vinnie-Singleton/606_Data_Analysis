@@ -9,6 +9,8 @@
 The sunset/sunrise file is stored as DATE,SUNRISE,SUNSET using the format:
 MM/DD/YYYY,HH:MM:SS,HH:MM:SS
 
+## Pseudo Code
+
 ### Reading the file (The file does not contain headers)
 [Reference](https://stackoverflow.com/questions/44558139/how-to-read-csv-without-header-and-name-them-with-names-while-reading-in-pyspark)
 
@@ -47,4 +49,28 @@ val max_sunrise = df.groupBy("Sunrise", “time”).max(“time”)
 
 val min_sunset = df.groupBy("Sunset", “time”).min(“time”)
 val max_sunset = df.groupBy("Sunset", “time”).max(“time”)
+```
+
+
+### Get the amount of daylight/darkness in both ranges for every day
+```
+val morning_darkness = sunrise – min_sunrise
+val morning_light = max_sunrise – sunrise
+
+val evening_darkness = max_sunset – sunset
+val evening_light = sunset – min_sunset
+```
+
+### Get number of rides in each range
+```
+val num_rides_in_morning = count(when(col("tpep_pickup_datetime”) <= max_sunrise AND col("tpep_pickup_datetime”) >= min_sunrise, True))
+val num_rides_in_evening = count(when(col("tpep_pickup_datetime”) <= max_sunset AND col("tpep_pickup_datetime”) >= min_sunset, True))
+```
+
+### Computing correlation 
+[Reference](https://stackoverflow.com/questions/37618977/pyspark-computing-correlation)
+
+```
+df.stat.coor(“num_rides_in_morning”, “morning_darkness”)
+df.stat.coor(“num_rides_in_evening”, “evening_darkness”)
 ```
