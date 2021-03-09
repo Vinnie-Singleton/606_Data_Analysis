@@ -23,6 +23,13 @@ schema = StructType([
 df = spark.read.csv("sunrise_sunset_times.csv",header=False,schema=schema)
 ```
 
+### Reading the file (The file does contain headers)
+
+```
+df = spark.read.csv("sunrise_sunset_times.csv",header=True)
+```
+
+
 ### To parse the times:
 ```
 # Format = 07:19:59
