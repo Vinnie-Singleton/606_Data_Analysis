@@ -4,6 +4,7 @@
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as fun
 
+
 spark = SparkSession.builder \
     .master("local[8]") \
     .appName("avdata") \
