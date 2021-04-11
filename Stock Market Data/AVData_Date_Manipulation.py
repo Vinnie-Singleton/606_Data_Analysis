@@ -54,9 +54,8 @@ df.withColumn('year', fun.year("timestamp")).show(2)
 # Extract the day of the year from the timestamp column
 df.withColumn('dayofyear', fun.dayofyear("timestamp")).show(2) 
 
-# calculate the difference from the current date ('days_ago')
-# datediff takes two dates and subtracts the first date from the 
-# second returning the number of days between the two
+# calculate the difference from the current date ('days_ago').
+# datediff takes two dates and returns the number of days between the two
 df.withColumn('days_ago', fun.datediff(fun.current_date(), "timestamp")).show()
 
 #group_by
@@ -86,8 +85,9 @@ windowSpec = Window.partitionBy("sourcefile").orderBy("days_ago")
 
 #see also lead
 
-# Store the value in the "open" column 14 days ago in the "lag" column based on the data stored
-# and ordered by the column days_ago from windowSpec
+# Store the value that was in the "open" column 14 days ago in the "lag" column.
+# The data comes from windowSpec so will be partitioned by stock symbol and ordered 
+# by the column days_ago
 dflag=df.withColumn("lag",fun.lag("open",14).over(windowSpec))
 # Show the stock symbol, the opening value 14 days from this opening, and the opening value of this record
 dflag.select('sourcefile', 'lag', 'open').show(99)
