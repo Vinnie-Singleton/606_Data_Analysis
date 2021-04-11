@@ -40,7 +40,7 @@ df.show()
 #dfsam = df.sample(0.001).collect() # a random sample
 #dfsam.count()
 
-# Since there is a lot of data, specify a suset of 10,000 records for faster testing.
+# Since there is a lot of data, specify a subet of 10,000 records for faster testing.
 dfsam = sqlContext.createDataFrame(df.head(10000), df.schema)
 
 # Count to make sure we've successfully loaded 10k records
