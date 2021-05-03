@@ -44,6 +44,7 @@ schema = StructType([ \
     StructField("total_amount", DoubleType(), True), \
     StructField("congestion_surcharge", DoubleType(), True)
   ])
+# List out the full path as the files are not located in the directory where this file is run from
 df = sc.read.format("csv").options(header='True').schema(schema).load("/projectnb2/ct-shbioinf/dan606/nyctaxi/trip\ data/yellow_tripdata_2019-01.csv")
 df.printSchema()
 df = sqlContext.createDataFrame(df.head(500000), df.schema) #not a random sample
@@ -52,6 +53,7 @@ df.count()
 df.show()
 
 # handle dates AND time
+# Convert to the correct date format
 df=df.withColumn('pickup_time', fun.to_timestamp('tpep_pickup_datetime', "yyyy-MM-dd HH:mm:ss"))
 df=df.withColumn('pickup_hour', fun.hour("pickup_time"))
 df.summary().show()
@@ -61,8 +63,11 @@ df.corr('total_amount', 'passenger_count')
 
 # https://spark.apache.org/docs/latest/ml-statistics.html
 # convert to vector column first
+# set the columns we want to analyse
 sel_col = ["trip_distance", "total_amount", "pickup_hour", "passenger_count", "tip_amount"]
+# drop all na values
 dffeat = df.select(sel_col).na.drop()
+# turn the selected columns into a vector
 assembler = VectorAssembler(inputCols=sel_col, outputCol="features")
 df_vector = assembler.transform(dffeat).select('features')
 # get correlation matrix
@@ -84,10 +89,13 @@ vector_assembler = VectorAssembler(inputCols=pred_col, outputCol='features')#Cre
 pipeline = Pipeline(stages=[
            vector_assembler
 ])
+# run the actual transformation of the vectorized columns
 df_transformed = pipeline.fit(df).transform(df)
 df_transformed.show()
 
+# rename the total_amount column to label
 df_input = df_transformed.select('total_amount', 'features').withColumnRenamed('total_amount', 'label')
+# set up the linear regression including the needed paremeters
 glr = GeneralizedLinearRegression(family="gaussian", link="identity", maxIter=100, regParam=0.3)
 
 # Fit the model
@@ -120,8 +128,10 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.regression import LinearRegression
 from pyspark.ml.tuning import ParamGridBuilder, TrainValidationSplit
 
+# split the data into 90% training 10% testing using a seed so we can duplicate the process
 train, test = df_input.randomSplit([0.9, 0.1], seed=12345)
 
+# set up the lr again
 glr = GeneralizedLinearRegression(family="gaussian", link="identity", maxIter=100, regParam=0.3)
 
 # We use a ParamGridBuilder to construct a grid of parameters to search over.
