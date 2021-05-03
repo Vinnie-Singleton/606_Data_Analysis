@@ -119,9 +119,9 @@ predictions = model.transform(testData)
 # Select example rows to display.
 predictions.select("prediction", "indexedLabel", "features").show(10)
 
-# Show predictions that are 1
+# Show predictions that are 1 to makes sure there are some of these values
 predictions.filter(predictions["prediction"]!=0.0).show(10)
-
+# Look at the correlations
 predictions.select("prediction", "indexedLabel", "features").corr('prediction', 'indexedLabel')
 
 
@@ -129,7 +129,7 @@ predictions.select("prediction", "indexedLabel", "features").corr('prediction', 
 evaluator = MulticlassClassificationEvaluator(
     labelCol="indexedLabel", predictionCol="prediction", metricName="accuracy")
     
-    
+ # print out the accuracy of the model   
 accuracy = evaluator.evaluate(predictions)
 print("Test Error = %g " % (1.0 - accuracy))
 
