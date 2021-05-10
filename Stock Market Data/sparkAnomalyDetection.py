@@ -31,11 +31,42 @@ df=df.withColumn('timestamp', fun.to_date("timestamp"))
 df=df.withColumn('days_ago', fun.datediff(fun.current_date(), "timestamp"))
 df=df.withColumn('days_ago', fun.datediff(fun.current_date(), "timestamp"))
 
-# Calculate week over week change (14 day window change)
+
+def stock_grew(yesterdayopen,todayopen):
+  if todayopen and yesterdayopen:
+    if ((todayopen - yesterdayopen) > 0):
+      return 1
+    else:
+      return 0
+  else:
+    return 0
+
+udf_stock_grew = fun.udf(lambda yesterdayopen,todayopen: stock_grew(yesterdayopen,todayopen), returnType=IntegerType())
+
+
+# Calculate week over week change (14 day window change) and if there was growth between the previous day and the current day
 windowSpec  = Window.partitionBy("ticker").orderBy("days_ago")
 dflag = df.withColumn("lag",fun.lag("open",14).over(windowSpec))
+dflag = dflag.withColumn("yesterdayopen",fun.lag("open",1).over(windowSpec))
 dflag = dflag.withColumn('twoweekdiff', fun.col('lag') - fun.col('open'))
+dflag = dflag.withColumn("priceincrease", udf_stock_grew(dflag["yesterdayopen"], dflag["open"]))
 dflag.show()
+
+
+
+# Get the number of days of growth for each stock
+growthDF = dflag.groupBy("ticker").agg(fun.sum(dflag.priceincrease).alias("totalpriceincrease"))
+growthDF = growthDF.na.drop()
+growthDF = growthDF.filter(growthDF.totalpriceincrease<50335)
+growthDF.sort(growthDF["totalpriceincrease"].desc()).show()
+
+growthStatsDF = growthDF.agg(fun.mean(growthDF.totalpriceincrease).alias("mean"), fun.stddev(growthDF.totalpriceincrease).alias("stddev"))
+
+growthStatsDF = growthStatsDF.withColumn("UpperLimit", growthStatsDF.mean + growthStatsDF.stddev * 3).withColumn("LowerLimit", growthStatsDF.mean - growthStatsDF.stddev * 3)
+growthStatsDF = growthStatsDF.withColumnRenamed("ticker","statsticker")
+growthStatsDF = growthStatsDF.na.drop()
+growthStatsDF.show()
+
 
 # Within group (ticker) calculate anomaly time periods
 # filter for anomalous events (keep outliers)
@@ -46,6 +77,16 @@ statsDF = statsDF.withColumn("UpperLimit", statsDF.mean + statsDF.stddev * 3).wi
 statsDF = statsDF.withColumnRenamed("ticker","statsticker")
 statsDF = statsDF.na.drop()
 statsDF.show()
+
+
+# Calculate outliers for growth
+upperBound = growthStatsDF.first().UpperLimit
+growthOutlierDF = growthDF.where(growthDF.totalpriceincrease > upperBound)
+growthOutlierDF.show()
+growthOutlierDF.count()
+
+
+
 
 # join stats with dflag 
 # will give a warning that we can ignore because of join on strings I think
